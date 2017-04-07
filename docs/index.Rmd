@@ -1,6 +1,5 @@
 ---
-title: Appendix S1. Detailed instructions for replicating analyses and reproducing
-  results.
+title: "ASSESSOR: An age-structured state-space stock-recruit model for Pacific salmon"
 output:
   html_document:
     fig_caption: yes
@@ -20,14 +19,15 @@ options(width = 100)
 ***
 
 ### Contributors
+
 [__Mark D. Scheuerell__](https://faculty.washington.edu/scheuerl/)  
 _Fish Ecology Division, Northwest Fisheries Science Center, National Marine Fisheries Service, National Oceanic and Atmospheric Administration, Seattle, WA USA, mark.scheuerell@noaa.gov_
 
-__Eric R. Buhle__  
-_Ocean Associates, Northwest Fisheries Science Center, National Marine Fisheries Service, National Oceanic and Atmospheric Administration, Seattle, WA USA, eric.buhle@noaa.gov_
-
 __Casey P. Ruff__  
 _Skagit River System Cooperative, Mt. Vernon, WA USA, cruff@skagitcoop.org_
+
+__Eric R. Buhle__  
+_Ocean Associates, Northwest Fisheries Science Center, National Marine Fisheries Service, National Oceanic and Atmospheric Administration, Seattle, WA USA, eric.buhle@noaa.gov_
 
 [__James T. Thorson__](https://sites.google.com/site/thorsonresearch/)  
 _Fishery Resource Analysis and Monitoring Division, Northwest Fisheries Science Center, National Marine Fisheries Service, National Oceanic and Atmospheric Administration, Seattle, WA USA, james.thorson@noaa.gov_
@@ -604,9 +604,9 @@ par_jags <- c("alpha","E_Rkr_a","mu_Rkr_a","Rkr_b","ln_Rkr_a",
 ## 3. MCMC control params
 ## MCMC parameters
 mcmc_chains <- 4
-mcmc_length <- 5e4
-mcmc_burn <- 2.5e4
-mcmc_thin <- 50
+mcmc_length <- 5e5
+mcmc_burn <- 2.5e5
+mcmc_thin <- 500
 ## total number of MCMC samples
 mcmc_samp <- (mcmc_length-mcmc_burn)*mcmc_chains/mcmc_thin
 
