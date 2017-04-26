@@ -1086,5 +1086,5 @@ polygon(c(t_idx_a,rev(t_idx_a)),c(pDat[3,],rev(pDat[1,])), col=clr, border=NA)
 lines(t_idx_a, pDat[2,], col="blue3", lwd=2)
 ```
  
- ## References
+## References
  
