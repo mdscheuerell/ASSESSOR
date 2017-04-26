@@ -11,7 +11,7 @@ model {
 	E_Rkr_a <- mu_Rkr_a + var_Qr/(2 - 2*phi^2);
 
 	## covariate effects
-  for(i in 1:n_cov) { cc[i] ~ dnorm(0,0.001) }
+	for(i in 1:n_cov) { cc[i] ~ dnorm(0,0.001) }
 
 	## strength of dens depend
 	Rkr_b ~ dunif(0,0.1);
@@ -24,130 +24,118 @@ model {
 	tau_Qr <- pow(sd_Qr,-2);
 	var_Qr <- pow(sd_Qr,2)
 	
-	# innovation in first year
+	## innovation in first year
 	innov_1 ~ dnorm(0,tau_Qr*(1-phi*phi));
 	
-	# obs variance for spawners
+	## obs variance for spawners
 	sd_Rs ~ dunif(0.001,20);
 	tau_Rs <- pow(sd_Rs,-2);
 	var_Rs <- pow(sd_Rs,2)
 	
-	# unprojectable early recruits;
-	# hyper mean across all popns
+	## unprojectable early recruits;
+	## hyper mean across all popns
 	Rec_mu ~ dnorm(0,0.001);
-	# hyper SD across all popns
+	## hyper SD across all popns
 	Rec_sig ~ dunif(0,100);
-	# precision across all popns
+	## precision across all popns
 	Rec_tau <- pow(Rec_sig,-2);
-	# multipliers for unobservable total runs
+	## multipliers for unobservable total runs
 	ttl_run_mu ~ dunif(1,5);
 	ttl_run_tau ~ dunif(1,20);
 	
-	# maturity schedule
-	# unif vec for Dirch prior
+	## maturity schedule
+	## unif vec for Dirch prior
 	for(i in 1:A) { theta[i] <- 1 }
-	# hyper-mean for maturity
+	## hyper-mean for maturity
 	p_mu ~ ddirch(theta);
-	# hyper-prec for maturity
+	## hyper-prec for maturity
 	p_pi ~ dunif(0.001,1e3);
 	for(t in 1:(n_yrs-age_min+n_fore)) { p_vec[t,1:A] ~ ddirch(p_mu*p_pi) }
 	
-	#------------
-	# LIKELIHOOD
-	#------------
-	# 1st brood yr requires different innovation
-	# predicted recruits in BY t
+	##------------
+	## LIKELIHOOD
+	##------------
+	## 1st brood yr requires different innovation
+	## predicted recruits in BY t
 	covar[1] <- inprod(cc,scl_cvrs[1,]);
 	ln_Rkr_a[1] <- mu_Rkr_a + covar[1];
 	E_ln_Rec[1] <- ln_Sp[1] + ln_Rkr_a[1] - Rkr_b*Sp[1] + phi*innov_1;
 	tot_ln_Rec[1] ~ dnorm(E_ln_Rec[1],tau_Qr);
 	res_ln_Rec[1] <- tot_ln_Rec[1] - E_ln_Rec[1];
-	# median of total recruits
+	## median of total recruits
 	tot_Rec[1] <- exp(tot_ln_Rec[1]);
 
-	# R/S
+	## R/S
 	ln_RS[1] <- tot_ln_Rec[1] - ln_Sp[1];
 		
-	# brood-yr recruits by age
-	for(a in 1:A) {
-		Rec[1,a] <- max(1,tot_Rec[1] * p_vec[1,a]);
-		}
-	
-	# brood years 2:(n_yrs-age_min)
+	## brood-yr recruits by age
+	for(a in 1:A) { Rec[1,a] <- max(1,tot_Rec[1] * p_vec[1,a]) };
+
+	## brood years 2:(n_yrs-age_min)
 	for(t in 2:(n_yrs-age_min+n_fore)) {
-		# predicted recruits in BY t
-    covar[t] <- inprod(cc,scl_cvrs[t,]);
+		## predicted recruits in BY t
+		covar[t] <- inprod(cc,scl_cvrs[t,]);
 		ln_Rkr_a[t] <- mu_Rkr_a + covar[t];
 		E_ln_Rec[t] <- ln_Sp[t] + ln_Rkr_a[t] - Rkr_b*Sp[t] + phi*res_ln_Rec[t-1];
 		tot_ln_Rec[t] ~ dnorm(E_ln_Rec[t],tau_Qr);
 		res_ln_Rec[t] <- tot_ln_Rec[t] - E_ln_Rec[t];
-		# median of total recruits
+		## median of total recruits
 		tot_Rec[t] <- exp(tot_ln_Rec[t]);
-		# R/S
+		## R/S
 		ln_RS[t] <- tot_ln_Rec[t] - ln_Sp[t];
-		# brood-yr recruits by age
-		for(a in 1:A) {
-			Rec[t,a] <- max(1,tot_Rec[t] * p_vec[t,a]);
-			}
-		} # end t loop over year
+		## brood-yr recruits by age
+		for(a in 1:A) { Rec[t,a] <- max(1,tot_Rec[t] * p_vec[t,a]) };
+	} ## end t loop over year
 
-	# get total cal yr returns for first age_min yrs
+	## get total cal yr returns for first age_min yrs
 	for(i in 1:(age_min+age_skip)) {
 		ln_tot_Run[i] ~ dnorm(ttl_run_mu*Rec_mu,Rec_tau/ttl_run_tau);
 		tot_Run[i] <- exp(ln_tot_Run[i]);
-    }
+	}
 
-	# get predicted calendar year returns by age
-	# matrix Run has dim [(n_yrs-age_min) x A]
-	# step 1: incomplete early broods
-	# first cal yr of this grp is first brood yr + age_min + age_skip
+	## get predicted calendar year returns by age
+	## matrix Run has dim [(n_yrs-age_min) x A]
+	## step 1: incomplete early broods
+	## first cal yr of this grp is first brood yr + age_min + age_skip
 	for(i in 1:(age_max-age_min-age_skip)) {
-		# projected recruits
-		for(a in 1:(i+age_skip)) {
-			Run[i,a] <- Rec[(age_skip+i)-a+1,a];
-			}
-		# imputed recruits
+		## projected recruits
+		for(a in 1:(i+age_skip)) { Run[i,a] <- Rec[(age_skip+i)-a+1,a] };
+		## imputed recruits
 		for(a in (i+1+age_skip):A) {
 			lnRec[i,a] ~ dnorm(Rec_mu,Rec_tau);
 			Run[i,a] <- exp(lnRec[i,a]);
-			}
-		# total run size
-		tot_Run[i+age_min+age_skip] <- sum(Run[i,1:A]);
-		# predicted age-prop vec for multinom
-		for(a in 1:A) {
-			age_v[i,a] <- Run[i,a] / tot_Run[i+age_min];
-			}
-		# multinomial for age comp
-		dat_age[i,1:A] ~ dmulti(age_v[i,1:A],dat_age[i,A+1]);
-    lp_age[i] <- logdensity.multi(dat_age[i,1:A],age_v[i,1:A],dat_age[i,A+1]);
 		}
+		## total run size
+		tot_Run[i+age_min+age_skip] <- sum(Run[i,1:A]);
+		## predicted age-prop vec for multinom
+		for(a in 1:A) { age_v[i,a] <- Run[i,a] / tot_Run[i+age_min] };
+		## multinomial for age comp
+		dat_age[i,1:A] ~ dmulti(age_v[i,1:A],dat_age[i,A+1]);
+		lp_age[i] <- logdensity.multi(dat_age[i,1:A],age_v[i,1:A],dat_age[i,A+1]);
+	} ## end step 1
 	
-	# step 2: info from complete broods
-	# first cal yr of this grp is first brood yr + age_max
+	## step 2: info from complete broods
+	## first cal yr of this grp is first brood yr + age_max
 	for(i in (A-age_skip):(n_yrs-age_min-age_skip+n_fore)) {
-		for(a in 1:A) {
-			Run[i,a] <- Rec[(age_skip+i)-a+1,a];
-			}
-		# total run size
+		for(a in 1:A) { Run[i,a] <- Rec[(age_skip+i)-a+1,a] };
+		## total run size
 		tot_Run[i+age_min+age_skip] <- sum(Run[i,1:A]);
-		# predicted age-prop vec for multinom
-		for(a in 1:A) {
-			age_v[i,a] <- Run[i,a] / tot_Run[i+age_min];
-			}
-		# multinomial for age comp
+		## predicted age-prop vec for multinom
+		for(a in 1:A) { age_v[i,a] <- Run[i,a] / tot_Run[i+age_min] };
+		## multinomial for age comp
 		dat_age[i,1:A] ~ dmulti(age_v[i,1:A],dat_age[i,A+1]);
-    lp_age[i] <- logdensity.multi(dat_age[i,1:A],age_v[i,1:A],dat_age[i,A+1]);
-		}
+		lp_age[i] <- logdensity.multi(dat_age[i,1:A],age_v[i,1:A],dat_age[i,A+1]);
+	}
 		
-	# get predicted calendar year spawners
-	# first cal yr is first brood yr
+	## get predicted calendar year spawners
+	## first cal yr is first brood yr
 	for(t in 1:(n_yrs+n_fore)) {
-		# obs model for spawners
+		## obs model for spawners
     Sp[t] <- max(1,tot_Run[t] - dat_harv[t]);
 		ln_Sp[t] <- log(Sp[t]);
 		ln_dat_esc[t] ~ dnorm(ln_Sp[t], tau_Rs);
-    lp_esc[t] <- logdensity.norm(ln_dat_esc[t],ln_Sp[t], tau_Rs)
-		}
+		lp_esc[t] <- logdensity.norm(ln_dat_esc[t],ln_Sp[t], tau_Rs);
+	} ## end step 2
 			
-} # end model description
+} ## end model description
 
